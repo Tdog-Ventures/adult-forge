@@ -1,0 +1,9 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+model User { id String @id @default(cuid()) email String @unique username String @unique password String? role Role @default(SUBSCRIBER) createdAt DateTime @default(now()) profile CreatorProfile? videos Video[] subscriptions Subscription[] messagesSent Message[] @relation("MessageSender") messagesReceived Message[] @relation("MessageReceiver") }
+model CreatorProfile { id String @id @default(cuid()) userId String @unique user User @relation(fields: [userId], references: [id]) displayName String bio String? avatarUrl String? bannerUrl String? videos Video[] }
+model Video { id String @id @default(cuid()) title String description String? creatorId String creator CreatorProfile @relation(fields: [creatorId], references: [id]) hlsMasterUrl String? thumbnailUrl String? price Decimal? status String @default("UPLOADED") createdAt DateTime @default(now()) }
+model Subscription { id String @id @default(cuid()) userId String user User @relation(fields: [userId], references: [id]) expiresAt DateTime status String @default("ACTIVE") }
+model Message { id String @id @default(cuid()) senderId String receiverId String sender User @relation("MessageSender", fields: [senderId], references: [id]) receiver User @relation("MessageReceiver", fields: [receiverId], references: [id]) content String price Decimal? isPaidUnlock Boolean @default(false) }
+enum Role { CREATOR STUDIO SUBSCRIBER ADMIN }
