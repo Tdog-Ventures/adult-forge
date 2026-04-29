@@ -29,9 +29,29 @@ def verify_external_key(x_facelessforge_key: str = Header(..., alias="X-Faceless
     if not FACELESSFORGE_API_KEY or x_facelessforge_key!= FACELESSFORGE_API_KEY: raise HTTPException(401, "Invalid API key")
     return True
 
+def _get_render_service():
+    try:
+        from app.services.render_service import render_service
+
+        return render_service
+    except ImportError:
+        return None
+
+
 @router.post("/render-video-status/batch", response_model=ExternalBatchStatusResponse)
 async def get_batch_render_status(payload: ExternalBatchStatusRequest, _: bool = Depends(verify_external_key)):
-    from app.services.render_service import render_service
+    render_service = _get_render_service()
+    if render_service is None:
+        return ExternalBatchStatusResponse(
+            jobs=[
+                ExternalBatchStatusItem(
+                    job_id=job_id,
+                    status="error",
+                    error="Render service is not configured",
+                )
+                for job_id in payload.job_ids
+            ]
+        )
     jobs = []
     for job_id in payload.job_ids:
         try:
